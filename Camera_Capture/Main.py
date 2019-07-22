@@ -1,6 +1,7 @@
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
+import datetime
 
 print("--------------")
 
@@ -19,35 +20,14 @@ def main():
 	else:
 		ret = False
 
+	date = datetime.datetime.now().strftime("_%Y%m%d_%H-%M-%S")
 	
 	cv2.imwrite('snapshotCOLOR.png', frame)
 	img = cv2.imread('snapshotCOLOR.png')
-	#colorpic = cv2.cvtColor( img, cv2.COLOR_BGR2RGB)
-	#cv2.imwrite('snapshotCOLOR.png', colorpic)
 	gray=cv2.cvtColor( img, cv2.COLOR_BGR2GRAY)
 	grayscale = cv2.resize(gray, dsize = (28, 28), interpolation = cv2.INTER_CUBIC)
-	cv2.imwrite('snapshotGRAY.png', grayscale)
-	#img1 = cv2.imread(frame)
-	#cv2.imwrite('hand.png', img1)
-	
-
-	#plt.imshow(colorpic)
-	#plt.title('Color Image RGB')
-	#plt.xticks([])
-	#plt.yticks([])
-	#plt.show()
-
+	cv2.imwrite('test' + date + '.png', grayscale)
 	cap.release()
-
-
-	#cv2.imwrite('hand-scaled.png',img1)
-
-
-	#gray = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
-	#lum_img = rgb2gray(img1)
-	#plt.imshow(gray)
-	#plt.title('Color Image Gray')
-	#plt.show()
 
 if __name__ == "__main__":
 	main()
