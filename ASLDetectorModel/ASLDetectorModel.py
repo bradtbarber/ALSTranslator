@@ -2,6 +2,8 @@ import warnings
 warnings.filterwarnings('ignore')
 
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -12,6 +14,11 @@ from collections import Counter
 n_input = 784
 n_classes = 25
 dropout = 0.75
+
+# Placeholders
+X = tf.placeholder(tf.float32, shape = [None, n_input]) # Placeholder for Feature Matrix
+Y = tf.placeholder(tf.float32, shape = [None, n_classes]) # Placeholder for Labels
+keep_prob = tf.placeholder(tf.float32) # Placeholder for Dropout Rate
 
 weights = {
     # Weight for Convolutional Layer 1: 5x5 filter, 1 input channel, 32 output channels
@@ -68,31 +75,46 @@ def neural_network(x, weight, bias, dropout):
     out = tf.add(tf.matmul(fc, weight['w4']), bias['b4']) # Output Layer
     return out
 
-data_test = pd.read_csv('./input/sign_mnist_test.csv')
-print('Dataframe Shape:', data_test.shape)
-
-data_test.head()
-
-x_test = data_test.iloc[:, 1:].values
-y_test = data_test.iloc[:, :1].values.flatten()
-y_test = one_hot_encode(y_test)
-x_test.shape, y_test.shape
-
 X = tf.placeholder(tf.float32, shape = [None, n_input]) # Placeholder for Feature Matrix
 Y = tf.placeholder(tf.float32, shape = [None, n_classes]) # Placeholder for Labels
 keep_prob = tf.placeholder(tf.float32) # Placeholder for Dropout Rate
 
 y_pred = neural_network(X, weights, biases, 1.0)
+init = tf.global_variables_initializer()
 
 def get_prediction(img):
     with tf.Session() as sess:
+        # Running Initializer
+        sess.run(init)
         pred = sess.run(y_pred, feed_dict = { X : img, keep_prob : dropout })
     img = img.reshape(28, 28)
     pred = list(pred.flatten())
-    pred = chr(pred.index(max(pred)) + 65)
-    return (img, pred)
+    maxPred = chr(pred.index(max(pred)) + 65)
+    return (img, maxPred)
 
-image, pred = get_prediction(x_test[1].reshape(1, 784))
-plt.imshow(image, cmap = 'binary')
-plt.title(pred)
-plt.show()
+def run_test(limit):
+    data_test = pd.read_csv('./input/sign_mnist_test.csv')
+    print('Dataframe Shape:', data_test.shape)
+
+    data_test.head()
+
+    x_test = data_test.iloc[:, 1:].values
+    y_test = data_test.iloc[:, :1].values.flatten()
+    y_test = one_hot_encode(y_test)
+    x_test.shape, y_test.shape
+    i = 0
+    for x in x_test:
+        image, pred = get_prediction(x.reshape(1, 784))
+        plt.imshow(image, cmap = 'binary')
+        plt.title(pred)
+        plt.show()
+        i = i + 1
+        if i == limit and limit != 0:
+            break
+    return
+    
+#Translate image - TODO: determine if this should be an image
+# or if thje image capture script can 
+
+run_test(5)
+
