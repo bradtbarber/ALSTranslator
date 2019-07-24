@@ -113,8 +113,23 @@ def run_test(limit):
             break
     return
     
-#Translate image - TODO: determine if this should be an image
-# or if thje image capture script can 
+def read_and_translate_image_capture_output():
+    files = os.listdir('..\\Camera_Capture\\output\\csv')
+    for file in files:
+        data = pd.read_csv('..\\Camera_Capture\\output\\csv\\' + file)
+        print(data)
+        print(data.iloc[:, :].values)
+        x = data.iloc[:, :].values
+        print(x.shape)
+        image, pred = get_prediction(x.reshape(1, 784))
+        plt.imshow(image, cmap = 'binary')
+        plt.title(pred)
+        plt.show()
+        
+#Read in data from Cmarea Capture outpur directory and attempt to translate
+read_and_translate_image_capture_output()
 
-run_test(5)
+#Run model against test set
+#run_test(limit = 5) #Uncomment to run model against test data 
+
 
