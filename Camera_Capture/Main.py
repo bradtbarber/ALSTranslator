@@ -41,37 +41,43 @@ def capture_image_and_save_as_csv():
 	write_csv_columns(image_name)
 
 	picture_num = 0
+
+	#inform user that program is ready to take a picture
+	print('Ready to begin.\n' + 
+		'Please press \'spacebar\' to take pictures.\n' + 
+		'Press \'esc\' when you are done.')
+
 	while 1:
     	#wait for keyboard interrupt
-		if msvcrt.kbhit():
-    		#if 'esc' key detected, exit loop
-			if ord(msvcrt.getch()) == 27:
-				print('Exiting...')
-				break
+		if msvcrt.kbhit() and ord(msvcrt.getch()) == 32:
+			print('Capturing Image...\n')
+			if cap.isOpened():
+				ret, frame = cap.read()
+			else:
+				ret = False
+				print('ERROR: Video capture device could not be found.')
+				return -1
+		
+			#convert image to greyscale and scale to 784 pix
+			grayscale = cv2.resize(
+				cv2.cvtColor( frame, cv2.COLOR_BGR2GRAY), 
+				dsize = (28, 28), 
+				interpolation = cv2.INTER_CUBIC
+				)
 
-			#if `spacebar` key detected, take picture
-			if ord(msvcrt.getch()) == 32:
-				print('Capturing Image...')
-				if cap.isOpened():
-					ret, frame = cap.read()
-				else:
-					ret = False
-					print('ERROR: Video capture device could not be found.')
-					return -1
-			
-				#convert image to greyscale and scale to 784 pix
-				grayscale = cv2.resize(
-					cv2.cvtColor( frame, cv2.COLOR_BGR2GRAY), 
-					dsize = (28, 28), 
-					interpolation = cv2.INTER_CUBIC
-					)
+			#write picture pix values as new row to csv
+			write_image_as_csv(grayscale, image_name)
 
-				#write picture pix values as new row to csv
-				write_image_as_csv(grayscale, image_name)
+			#write image to output directory for debugging and verification		
+			cv2.imwrite('.\\output\\png\\' + image_name + '_' + str(picture_num) + '.png', grayscale)
+			picture_num = picture_num + 1
 
-				#write image to output directory for debugging and verification		
-				cv2.imwrite('.\\output\\png\\' + image_name + '_' + str(picture_num) + '.png', grayscale)
-				picture_num = picture_num + 1
+			#inform user that program is ready for the next input
+			print('OK: Ready to take next picture.')
+		
+		elif msvcrt.kbhit() and ord(msvcrt.getch()) == 27:
+			print('Exiting...\n')
+			break
 	
 	#release camera and return path to csv
 	cap.release()
