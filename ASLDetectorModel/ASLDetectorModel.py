@@ -115,16 +115,23 @@ def run_test(limit):
     return
     
 def read_and_translate_image_capture_output(image_file):
+    #read in csv file and get number of images
     data = pd.read_csv('..\\Camera_Capture\\output\\csv\\' + image_file)
     row_count = len(data.index)
     result = ''
 
+    #iterate over all rows (images) in the csv file and try to detect the ASL sign present
     for i in range(row_count):
+        #get prediction for image
         x = data.iloc[i].values
         image, pred = get_prediction(x.reshape(1, 784))
+        
+        #show image file and detected sign
         plt.imshow(image, cmap = 'binary')
         plt.title(pred)
         plt.show()
+
+        #add sign translation to result
         result = result + pred
     
     return result
@@ -140,6 +147,4 @@ else:
     #Read in data from Cmarea Capture outpur directory and attempt to translate
     result = read_and_translate_image_capture_output(image_file)
     print(result)
-
-    #Run model against test set
-    #run_test(limit = 5) #Uncomment to run model against test data 
+    
