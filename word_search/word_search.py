@@ -1,14 +1,15 @@
+import sys
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import requests
 
-print("--------------")
+print('--------------')
 
 def get_word(word):
-    key = "b28515ae-24a1-4796-be7c-e5cda4b47014"
-    URL = "https://www.dictionaryapi.com/api/v3/references/sd2/json/"
-    URL += word + "?"
+    key = 'b28515ae-24a1-4796-be7c-e5cda4b47014'
+    URL = 'https://www.dictionaryapi.com/api/v3/references/sd2/json/'
+    URL += word + '?'
     URL += key 
     PARAMS = {'word': word,'key': key}
     r = requests.get(url = URL, params = PARAMS)
@@ -17,21 +18,25 @@ def get_word(word):
     
 
 def main():
-    file = open("word.txt","r")
-    guess = str(file.read()) # Read from a file
+    #ensure a word string was provided as an argument
+    if len(sys.argv) <= 1:
+        print('No word argument provided. Exiting...')
+        return -1
 
-    r = get_word(guess)
+    #look up word argument from Dictionary.com API
+    word = sys.argv[1]
+    r = get_word(word)
 
+    #if API request succeeds
     if r.status_code == 200:
-     
         r.encoding = 'utf-8'
         data = r.json()
       
         try: 
             #definition is found
-            deff = str(data[0]['def'][0]['sseq'][0])
-            print('Definition found')    
-            print(deff)
+            deff = str(data[0]['def'][0]['sseq'][0][0][1]['dt'][0][1]).replace('{bc}', '')
+            print('Definition found: ')    
+            print(word + ' - ' + deff)
 
         except:
             #iterates through the definitions, if definition is not found
@@ -46,10 +51,13 @@ def main():
             print('Definition found')    
             print(deff2)
 
-    if r.status_code == 204:
+    elif r.status_code == 204:
         print('No content')
-    if r.status_code == 404:
+    elif r.status_code == 404:
         print('Not found')
+    else:
+        print('Unable to send API request to Dictionary.com: ' + r.status_code)
+        return -1
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

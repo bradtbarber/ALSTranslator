@@ -4,6 +4,7 @@ warnings.filterwarnings('ignore')
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
+import sys
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -113,23 +114,37 @@ def run_test(limit):
             break
     return
     
-def read_and_translate_image_capture_output():
-    files = os.listdir('..\\Camera_Capture\\output\\csv')
-    for file in files:
-        data = pd.read_csv('..\\Camera_Capture\\output\\csv\\' + file)
-        print(data)
-        print(data.iloc[:, :].values)
-        x = data.iloc[:, :].values
-        print(x.shape)
+def read_and_translate_image_capture_output(image_file):
+    #read in csv file and get number of images
+    data = pd.read_csv('..\\Camera_Capture\\output\\csv\\' + image_file)
+    row_count = len(data.index)
+    result = ''
+
+    #iterate over all rows (images) in the csv file and try to detect the ASL sign present
+    for i in range(row_count):
+        #get prediction for image
+        x = data.iloc[i].values
         image, pred = get_prediction(x.reshape(1, 784))
+        
+        #show image file and detected sign
         plt.imshow(image, cmap = 'binary')
         plt.title(pred)
         plt.show()
-        
-#Read in data from Cmarea Capture outpur directory and attempt to translate
-read_and_translate_image_capture_output()
 
-#Run model against test set
-#run_test(limit = 5) #Uncomment to run model against test data 
+        #add sign translation to result
+        result = result + pred
+    
+    return result
 
+#ensure an image file was passed as an argument       
+if len(sys.argv) <= 1:
+    print('No image file provided. Exiting...')
 
+else:
+    #retreive image file from argument list
+    image_file = sys.argv[1]
+
+    #Read in data from Cmarea Capture outpur directory and attempt to translate
+    result = read_and_translate_image_capture_output(image_file)
+    print(result)
+    
