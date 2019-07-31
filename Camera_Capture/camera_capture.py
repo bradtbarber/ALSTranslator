@@ -51,7 +51,7 @@ def capture_image_and_save_as_csv():
 	while 1:
 		ret, frame = cap.read()
 		screen_cap = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-		cv2.rectangle(screen_cap, (80,80), (550, 400), (255,255,00),2)
+		cv2.rectangle(screen_cap, (79,0), (559, 479), (255,255,00),2)
 		cv2.imshow("Capturing", screen_cap)
 
 		key = cv2.waitKey(1)
