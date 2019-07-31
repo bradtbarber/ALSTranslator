@@ -48,8 +48,15 @@ def capture_image_and_save_as_csv():
 		'Press \'esc\' when you are done.')
 
 	while 1:
-    	#wait for keyboard interrupt
-		if msvcrt.kbhit() and ord(msvcrt.getch()) == 32:
+		check, frame = cap.read()
+		gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+		cv2.rectangle(gray, (80,80), (550, 400), (255,255,00),2)
+		cv2.imshow("Capturing", gray)
+		
+		key = cv2.waitKey(1)
+		
+		#wait for keyboard interrupt
+		if key == 32:
 			print('Capturing Image...\n')
 			if cap.isOpened():
 				ret, frame = cap.read()
@@ -75,7 +82,7 @@ def capture_image_and_save_as_csv():
 			#inform user that program is ready for the next input
 			print('OK: Ready to take next picture.')
 		
-		elif msvcrt.kbhit() and ord(msvcrt.getch()) == 27:
+		elif key == 27:
 			print('Exiting...\n')
 			break
 	
