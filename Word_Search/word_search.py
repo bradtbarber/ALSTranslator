@@ -35,6 +35,7 @@ def check_word(word):
             return 0
 
         except:
+            #definition not present
             if len(data) > 0:
                 print('Definition NOT found, perhaps you meant:')
                 possible_match = data[0]
