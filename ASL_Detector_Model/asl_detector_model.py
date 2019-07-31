@@ -84,18 +84,20 @@ y_pred = neural_network(X, weights, biases, 1.0)
 init = tf.global_variables_initializer()
 
 def get_prediction(img):
+    prob_dict = {}
     with tf.Session() as sess:
         # Running Initializer
         sess.run(init)
         pred = sess.run(y_pred, feed_dict = { X : img, keep_prob : dropout })
     img = img.reshape(28, 28)
     pred = list(pred.flatten())
+    for p in pred:
+        prob_dict[chr(pred.index(p) + 65)] = (p - min(pred)) / (max(pred) - min(pred)) 
     maxPred = chr(pred.index(max(pred)) + 65)
-    return (img, maxPred)
+    return (img, maxPred, prob_dict)
 
 def run_test(limit):
     data_test = pd.read_csv(os.path.abspath('ASL_Detector_Model\\input\\sign_mnist_test.csv'))
-    print('Dataframe Shape:', data_test.shape)
     result = ''
 
     data_test.head()
@@ -107,7 +109,7 @@ def run_test(limit):
     i = 0
     for x in x_test:
         #print('image: ' + str(x)[1:-1])
-        image, pred = get_prediction(x.reshape(1, 784))
+        image, pred, prob_dict = get_prediction(x.reshape(1, 784))
         plt.imshow(image, cmap = 'gray')
         plt.title(pred)
         plt.show()
@@ -120,7 +122,6 @@ def run_test(limit):
 def read_and_translate_image_capture_output(image_file):
     #read in csv file and get number of images
     data = pd.read_csv(image_file)
-    print('Dataframe Shape:', data.shape)
     row_count = len(data.index)
     result = ''
 
@@ -128,8 +129,14 @@ def read_and_translate_image_capture_output(image_file):
     for i in range(row_count):
         #get prediction for image
         x = data.iloc[i].values
-        #print('image: ' + str(x)[1:-1])
-        image, pred = get_prediction(x.reshape(1, 784))
+        image, pred, prob_dict = get_prediction(x.reshape(1, 784))
+        
+        #print translation probability array
+        print('Image ' + str(i) + ' Probability Array')
+        for char, prob in prob_dict.items():
+            print(char + ': ' + str(prob))
+        print('\n')
+        
         plt.imshow(image, cmap = 'gray')
         plt.title(pred)
         plt.show()
