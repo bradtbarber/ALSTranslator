@@ -49,8 +49,15 @@ def capture_image_and_save_as_csv():
 		'Press \'esc\' when you are done.')
 
 	while 1:
-    	#wait for keyboard interrupt
-		if msvcrt.kbhit() and ord(msvcrt.getch()) == 32:
+		ret, frame = cap.read()
+		screen_cap = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+		cv2.rectangle(screen_cap, (80,80), (550, 400), (255,255,00),2)
+		cv2.imshow("Capturing", screen_cap)
+
+		key = cv2.waitKey(1)
+
+		#wait for keyboard interrupt
+		if key == 32:
 			print('Capturing Image...\n')
 			if cap.isOpened():
 				ret, frame = cap.read()
@@ -60,23 +67,21 @@ def capture_image_and_save_as_csv():
 				return -1
 		
 			#convert image to greyscale and scale to 784 pix
-			grayscale = cv2.resize(
-				cv2.cvtColor( frame, cv2.COLOR_BGR2GRAY), 
-				dsize = (28, 28), 
-				interpolation = cv2.INTER_CUBIC
-				)
+			gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+			gray_cropped = gray[:, 79:559].copy()
+			gray_scaled = cv2.resize(gray_cropped, (28, 28))
 
 			#write picture pix values as new row to csv
-			write_image_as_csv(grayscale, image_name)
+			write_image_as_csv(gray_scaled, image_name)
 
 			#write image to output directory for debugging and verification		
-			cv2.imwrite('Camera_Capture\\output\\png\\' + image_name + '_' + str(picture_num) + '.png', grayscale)
+			cv2.imwrite('Camera_Capture\\output\\png\\' + image_name + '_' + str(picture_num) + '.png', gray_scaled)
 			picture_num = picture_num + 1
 
 			#inform user that program is ready for the next input
 			print('OK: Ready to take next picture.')
 		
-		elif msvcrt.kbhit() and ord(msvcrt.getch()) == 27:
+		elif key == 27:
 			print('\nESC key detected\nExiting...\n')
 			break
 	
