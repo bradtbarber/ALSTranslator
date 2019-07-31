@@ -96,6 +96,7 @@ def get_prediction(img):
 def run_test(limit):
     data_test = pd.read_csv(os.path.abspath('ASL_Detector_Model\\input\\sign_mnist_test.csv'))
     print('Dataframe Shape:', data_test.shape)
+    result = ''
 
     data_test.head()
 
@@ -105,18 +106,21 @@ def run_test(limit):
     x_test.shape, y_test.shape
     i = 0
     for x in x_test:
+        #print('image: ' + str(x)[1:-1])
         image, pred = get_prediction(x.reshape(1, 784))
         plt.imshow(image, cmap = 'binary')
         plt.title(pred)
         plt.show()
         i = i + 1
+        result = result + pred
         if i == limit and limit != 0:
             break
-    return
+    return result
     
 def read_and_translate_image_capture_output(image_file):
     #read in csv file and get number of images
     data = pd.read_csv(image_file)
+    print('Dataframe Shape:', data.shape)
     row_count = len(data.index)
     result = ''
 
@@ -124,20 +128,28 @@ def read_and_translate_image_capture_output(image_file):
     for i in range(row_count):
         #get prediction for image
         x = data.iloc[i].values
+        #print('image: ' + str(x)[1:-1])
         image, pred = get_prediction(x.reshape(1, 784))
-        
-        #show image file and detected sign
         plt.imshow(image, cmap = 'binary')
         plt.title(pred)
         plt.show()
-
-        #add sign translation to result
         result = result + pred
     
     return result
 
 def translate_asl_images(image_file):
-    #Read in data from Cmarea Capture outpur directory and attempt to translate
+    #Run test to make sure model is producing accurate predictions
+    print('performing test run on first 5 test images...')
+    expected_result = 'GFKAD'
+    test_result = run_test(5)
+    print('test result: ' + test_result)
+    print('expected result: ' + expected_result)
+    if test_result == expected_result:
+        print('test successful!\n')
+    else:
+        print('test failed. Results may be incorrect...\n')
+
+    #Read in data from Camera Capture output directory and attempt to translate
     result = read_and_translate_image_capture_output(image_file)
     print('Translated ASL: ' + result + '\n')
     return result
