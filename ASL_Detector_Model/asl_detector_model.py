@@ -110,9 +110,9 @@ def run_test(limit):
     for x in x_test:
         #print('image: ' + str(x)[1:-1])
         image, pred, prob_dict = get_prediction(x.reshape(1, 784))
-        plt.imshow(image, cmap = 'gray')
-        plt.title(pred)
-        plt.show()
+        #plt.imshow(image, cmap = 'gray')
+        #plt.title(pred)
+        #plt.show()
         i = i + 1
         result = result + pred
         if i == limit and limit != 0:
