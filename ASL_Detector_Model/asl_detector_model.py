@@ -108,7 +108,7 @@ def run_test(limit):
     for x in x_test:
         #print('image: ' + str(x)[1:-1])
         image, pred = get_prediction(x.reshape(1, 784))
-        plt.imshow(image, cmap = 'binary')
+        plt.imshow(image, cmap = 'gray')
         plt.title(pred)
         plt.show()
         i = i + 1
@@ -130,7 +130,7 @@ def read_and_translate_image_capture_output(image_file):
         x = data.iloc[i].values
         #print('image: ' + str(x)[1:-1])
         image, pred = get_prediction(x.reshape(1, 784))
-        plt.imshow(image, cmap = 'binary')
+        plt.imshow(image, cmap = 'gray')
         plt.title(pred)
         plt.show()
         result = result + pred
