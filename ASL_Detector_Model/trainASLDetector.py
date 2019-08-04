@@ -63,9 +63,9 @@ print('Shape of y after encoding:', y_encoded.shape)
 
 # Training Parameters
 learning_rate = 0.001
-epochs = 2000
+epochs = 200
 batch_size = 128
-display_step = 100
+#display_step = 100
 
 # Neural Network Hyperparameters
 n_input = 784
@@ -82,14 +82,14 @@ weights = {
     'w1' : tf.Variable(tf.random_normal([5, 5, 1, 32])),
     # Weight for Convolutional Layer 2: 5x5 filter, 32 input channels, 64 output channels
     'w2' : tf.Variable(tf.random_normal([5, 5, 32, 64])),
-    # Weight for Convolutional Layer 3: 5x5 filter, 64 input channels, 128 output channels
-    'w3' : tf.Variable(tf.random_normal([5, 5, 64, 128])),
+    # Weight for Convolutional Layer 3: 5x5 filter, 64 input channels, 96 output channels
+    'w3' : tf.Variable(tf.random_normal([5, 5, 64, 96])),
     # Weight for Fully Connected Layer 1: 49 * 128 input channels, 1024 output channels
-    'w4' : tf.Variable(tf.random_normal([262144, 1024])),
-    # Weight for Fully Connected Layer 2: 49 * 124 input channels, 1024 output channels
-    'w5' : tf.Variable(tf.random_normal([1024, 512])),
+    'w4' : tf.Variable(tf.random_normal([32 * 64 * 96, 1024])),
+    # # Weight for Fully Connected Layer 2: 49 * 124 input channels, 1024 output channels
+    # 'w5' : tf.Variable(tf.random_normal([1024, 512])),
     # Weight for Output Layer: 512 input channels, 25(number of classes) output channels
-    'w6' : tf.Variable(tf.random_normal([512, n_classes]))
+    'w5' : tf.Variable(tf.random_normal([1024, n_classes]))
 }
 
 biases = {
@@ -98,13 +98,13 @@ biases = {
     # Bias for Convolutional Layer 2
     'b2' : tf.Variable(tf.random_normal([64])),
     # Bias for Convolutional Layer 3
-    'b3' : tf.Variable(tf.random_normal([128])),
+    'b3' : tf.Variable(tf.random_normal([96])),
     # Bias for Fully Connected Layer 1
     'b4' : tf.Variable(tf.random_normal([1024])),
-    # Bias for Fully Connected Layer 2
-    'b5' : tf.Variable(tf.random_normal([512])),
+    # # Bias for Fully Connected Layer 2
+    # 'b5' : tf.Variable(tf.random_normal([512])),
     # Bias for Outout Layer
-    'b6' : tf.Variable(tf.random_normal([n_classes]))
+    'b5' : tf.Variable(tf.random_normal([n_classes]))
 }
 
 # Wrapper function for creating a Convolutional Layer
@@ -117,20 +117,20 @@ def conv2d(x, W, b, strides = 1):
 def maxpool2d(x, k=2):
     return tf.nn.max_pool(x, ksize = [1, k, k, 1], strides = [1, k, k, 1], padding = 'SAME')
 
-def neural_network(x, weight, bias, dropout, k, stride):
+def neural_network(x, weight, bias, dropout):
     x = tf.reshape(x, shape = [-1, 28, 28, 1])
     
     # Convolutional Layer 1
-    conv1 = conv2d(x, weight['w1'], bias['b1'], strides = stride[0])
-    conv1 = maxpool2d(conv1, k = k[0])
+    conv1 = conv2d(x, weight['w1'], bias['b1'])
+    conv1 = maxpool2d(conv1)
     
     # Convolutional Layer 2
-    conv2 = conv2d(conv1, weight['w2'], bias['b2'], strides = stride[1])
-    conv2 = maxpool2d(conv2, k = k[1])
+    conv2 = conv2d(conv1, weight['w2'], bias['b2'])
+    conv2 = maxpool2d(conv2)
 
     # Convolutional Layer 3
-    conv3 = conv2d(conv2, weight['w3'], bias['b3'], strides = stride[2])
-    conv3 = maxpool2d(conv3, k = k[2])
+    conv3 = conv2d(conv2, weight['w3'], bias['b3'])
+    conv3 = maxpool2d(conv3)
     
     # Fully Connected Layer 1
     # Reshaping output of previous convolutional layer to fit the fully connected layer
@@ -141,12 +141,12 @@ def neural_network(x, weight, bias, dropout, k, stride):
     fc1 = tf.nn.relu(fc1) # Relu activation function
     fc1 = tf.nn.dropout(fc1, dropout) # Applying dropout on Fully Connected Layer
 
-    # Add fully connected layer
-    fc2 = tf.add(tf.matmul(fc1, weight['w5']), bias['b5'])
-    fc2 = tf.nn.relu(fc2) # Relu activation function
-    fc2 = tf.nn.dropout(fc2, dropout) # Applying dropout on Fully Connected Layer
+    # # Add fully connected layer
+    # fc2 = tf.add(tf.matmul(fc1, weight['w5']), bias['b5'])
+    # fc2 = tf.nn.relu(fc2) # Relu activation function
+    # fc2 = tf.nn.dropout(fc2, dropout) # Applying dropout on Fully Connected Layer
     
-    out = tf.add(tf.matmul(fc2, weight['w6']), bias['b6']) # Output Layer
+    out = tf.add(tf.matmul(fc1, weight['w5']), bias['b5']) # Output Layer
     return out
 
 #TRAINING NEURAL NETWORK
@@ -162,67 +162,64 @@ print('y test shape', y_test.shape)
 k_vals = [[2,2,2], [2,2,4]]
 stride_vals = [[1,1,1], [2,2,2]]
 
-for k in k_vals:
-    for stride in stride_vals:
-        print()
-        print('************************************************************************************')
-        print('For K = {' + str(k[0]) + ', ' + str(k[1]) + ', ' + str(k[2]) + '} and Stride = {' + str(stride[0]) + ', ' + str(stride[1]) + ', ' + str(stride[2]) + '}')
-        print()
+print()
+print('************************************************************************************')
+print()
 
-        logits = neural_network(X, weights, biases, keep_prob, k, stride)
+logits = neural_network(X, weights, biases, keep_prob)
 
-        loss_op = tf.nn.softmax_cross_entropy_with_logits_v2(logits = logits, labels = Y)
-        optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
-        train_op = optimizer.minimize(loss_op)
+loss_op = tf.nn.softmax_cross_entropy_with_logits_v2(logits = logits, labels = Y)
+optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
+train_op = optimizer.minimize(loss_op)
 
-        correct_pred = tf.equal(tf.argmax(logits, 1), tf.argmax(Y, 1))
-        accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+correct_pred = tf.equal(tf.argmax(logits, 1), tf.argmax(Y, 1))
+accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
-        init = tf.global_variables_initializer()
+init = tf.global_variables_initializer()
 
-        with tf.Session() as sess:
-            # Running Initializer
-            sess.run(init)
-            cost_hist, acc_hist = [], []
-            for epoch in range(1, epochs + 1):
-                _x, _y = next_batch(batch_size, X_train, y_train)
+with tf.Session() as sess:
+    # Running Initializer
+    sess.run(init)
+    cost_hist, acc_hist = [], []
+    for epoch in range(1, epochs + 1):
+        _x, _y = next_batch(batch_size, X_train, y_train)
 
-                #print('X train shape', _x.shape)
-                #print('y train shape', _y.shape)
+        #print('X train shape', _x.shape)
+        #print('y train shape', _y.shape)
 
-                # Running Optimizer
-                sess.run(train_op, feed_dict = { X : _x, Y : _y, keep_prob : dropout })
-                if epoch % display_step == 0:
-                    # Calculating Loss and Accuracy on the current Epoch
-                    loss, acc = sess.run([loss_op, accuracy], feed_dict = { X : _x, Y : _y, keep_prob : 1.0 })
-                    loss = sum(loss)
-                    cost_hist.append(loss)
-                    acc_hist.append(acc)
-                    print('Epoch ' + str(epoch) + ', Cost: ' + str(loss) + ', Accuracy: ' + str(acc * 100) + ' %')
-            print('-' * 50)
-            print('\nOptimization Finished\n')
-            print('Accuracy on Training Data: ' + str(sess.run(accuracy,
-                                                            feed_dict = {
-                                                                X : X_train,
-                                                                Y : y_train,
-                                                                keep_prob : 1.0
-                                                            }) * 100) + ' %')
-            print('Accuracy on Test Data: ' + str(sess.run(accuracy,
-                                                        feed_dict = {
-                                                            X : X_test,
-                                                            Y : y_test,
-                                                            keep_prob : 1.0
-                                                        }) * 100) + ' %')
+        # Running Optimizer
+        sess.run(train_op, feed_dict = { X : _x, Y : _y, keep_prob : dropout })
+        # if epoch % display_step == 0:
+        #     # Calculating Loss and Accuracy on the current Epoch
+        #     loss, acc = sess.run([loss_op, accuracy], feed_dict = { X : _x, Y : _y, keep_prob : 1.0 })
+        #     loss = sum(loss)
+        #     cost_hist.append(loss)
+        #     acc_hist.append(acc)
+        #     print('Epoch ' + str(epoch) + ', Cost: ' + str(loss) + ', Accuracy: ' + str(acc * 100) + ' %')
+    print('-' * 50)
+    print('\nOptimization Finished\n')
+    print('Accuracy on Training Data: ' + str(sess.run(accuracy,
+                                                    feed_dict = {
+                                                        X : X_train,
+                                                        Y : y_train,
+                                                        keep_prob : 1.0
+                                                    }) * 100) + ' %')
+    print('Accuracy on Test Data: ' + str(sess.run(accuracy,
+                                                feed_dict = {
+                                                    X : X_test,
+                                                    Y : y_test,
+                                                    keep_prob : 1.0
+                                                }) * 100) + ' %')
 
-        plt.plot(list(range(len(cost_hist))), cost_hist)
-        plt.title("Change in cost")
-        plt.show()
+plt.plot(list(range(len(cost_hist))), cost_hist)
+plt.title("Change in cost")
+plt.show()
 
-        plt.plot(list(range(len(acc_hist))), acc_hist)
-        plt.title("Change in accuracy")
-        plt.show()
-        print('************************************************************************************')
-        print()
+plt.plot(list(range(len(acc_hist))), acc_hist)
+plt.title("Change in accuracy")
+plt.show()
+print('************************************************************************************')
+print()
 
 print('Training on the whole dataset....\n')
 with tf.Session() as sess:
