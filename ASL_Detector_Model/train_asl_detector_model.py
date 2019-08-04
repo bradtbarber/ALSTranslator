@@ -1,3 +1,6 @@
+# Adapted from code posted by user Soumik Rakshit on Kaggle.com
+# URL: https://www.kaggle.com/soumikrakshit/sign-language-translation-cnn
+
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -23,6 +26,7 @@ y = data.iloc[:, :1].values.flatten()
 print('Labels:\n', y)
 print('Shape of Labels:', y.shape)
 
+# Gets next Batch of batch_size from Data
 def next_batch(batch_size, data, labels):
     idx = np.arange(0, len(data))
     np.random.shuffle(idx)
@@ -31,6 +35,7 @@ def next_batch(batch_size, data, labels):
     labels_shuffle = [labels[i] for i in idx]
     return np.asarray(data_shuffle), np.asarray(labels_shuffle)
 
+# Displays a Sample of Images from Batch of Data
 def display_images(data):
     x, y = data
     fig, axes = plt.subplots(3, 3)
@@ -42,19 +47,21 @@ def display_images(data):
         ax.set_yticks([])
     plt.show()
 
-# Display a batch of the data
-display_images(next_batch(9, x, y))
+# # Display a batch of the data
+# display_images(next_batch(9, x, y))
 
-z = dict(Counter(list(y)))
-labels = z.keys()
-frequencies = [z[i] for i in labels]
-labels = [chr(i + 65) for i in z.keys()]
+# # Display a Frequency Graph of Each Sign from Dataset
+# z = dict(Counter(list(y)))
+# labels = z.keys()
+# frequencies = [z[i] for i in labels]
+# labels = [chr(i + 65) for i in z.keys()]
 
-plt.figure(figsize = (20, 10))
-plt.bar(labels, frequencies)
-plt.title('Frequency Distribution of Alphabets', fontsize = 20)
-plt.show()
+# plt.figure(figsize = (20, 10))
+# plt.bar(labels, frequencies)
+# plt.title('Frequency Distribution of Alphabets', fontsize = 20)
+# plt.show()
 
+# One-Hot encode Labels
 def one_hot_encode(y):
     return np.eye(25)[y]
 
@@ -84,7 +91,7 @@ weights = {
     'w2' : tf.Variable(tf.random_normal([5, 5, 32, 64])),
     # Weight for Fully Connected Layer 1: 49 * 64 input channels, 1024 output channels
     'w3' : tf.Variable(tf.random_normal([7 * 7 * 64, 1024])),
-    # Weight for Convolutional Layer 1: 1024 input channels, 25(number of classes) output channels
+    # Weight for Output Layer: 1024 input channels, 25(number of classes) output channels
     'w4' : tf.Variable(tf.random_normal([1024, n_classes]))
 }
 
@@ -99,6 +106,12 @@ biases = {
     'b4' : tf.Variable(tf.random_normal([n_classes]))
 }
 
+# Apply random brightness and contrast distortions to image
+def distort_image(image):
+  contrast_image = tf.image.random_contrast(image, lower=0.6, upper=1.4, seed=43)
+  brightness_image = tf.image.random_brightness(contrast_image, max_delta=0.1, seed=44)
+  return brightness_image
+
 # Wrapper function for creating a Convolutional Layer
 def conv2d(x, W, b, strides = 1):
     x = tf.nn.conv2d(x, W, strides = [1, strides, strides, 1], padding='SAME')
@@ -110,23 +123,31 @@ def maxpool2d(x, k=2):
     return tf.nn.max_pool(x, ksize = [1, k, k, 1], strides = [1, k, k, 1], padding = 'SAME')
 
 def neural_network(x, weight, bias, dropout):
+    # Reshape input array to 2D image matrix
     x = tf.reshape(x, shape = [-1, 28, 28, 1])
+
+    # Apply random distortions to image to improve generalization of model
+    x = distort_image(x)
     
-    conv1 = conv2d(x, weight['w1'], bias['b1']) # Convolutional Layer 1
-    conv1 = maxpool2d(conv1) # Pooling Layer 1
+    # Convolutional Layer 1
+    conv1 = conv2d(x, weight['w1'], bias['b1'])
+    pool1 = maxpool2d(conv1)
     
-    conv2 = conv2d(conv1, weight['w2'], bias['b2']) # Convolutional Layer 2
-    conv2 = maxpool2d(conv2) # Pooling Layer 1
+    # Convolutional Layer 2
+    conv2 = conv2d(pool1, weight['w2'], bias['b2'])
+    pool2 = maxpool2d(conv2)
     
-    # Fully Connected Layer 1
     # Reshaping output of previous convolutional layer to fit the fully connected layer
-    fc = tf.reshape(conv2, [-1, weights['w3'].get_shape().as_list()[0]])
-    fc = tf.add(tf.matmul(fc, weight['w3']), bias['b3']) # Linear Function
-    fc = tf.nn.relu(fc) # Activation Function
+    fc = tf.reshape(pool2, [-1, weights['w3'].get_shape().as_list()[0]])
+
+    # Fully Connected Layer 1
+    fc = tf.add(tf.matmul(fc, weight['w3']), bias['b3'])
+    fc = tf.nn.relu(fc)
+    # Dropout on Fully Connected Layer 1
+    fc = tf.nn.dropout(fc, dropout)
     
-    fc = tf.nn.dropout(fc, dropout) # Applying dropout on Fully Connected Layer
-    
-    out = tf.add(tf.matmul(fc, weight['w4']), bias['b4']) # Output Layer
+    # Output Layer
+    out = tf.add(tf.matmul(fc, weight['w4']), bias['b4'])
     return out
 
 logits = neural_network(X, weights, biases, keep_prob)
@@ -141,24 +162,21 @@ accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 init = tf.global_variables_initializer()
 
 
-#TRAINING NEURAL NETWORK
+#-----------------------------------Train CNN Model-----------------------------------------
 
-# Splitting the dataset into Training and Holdout(Test set)
+# Split the dataset into Training and Verification sets
 from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(x, y_encoded, test_size = 0.33, random_state = 42)
-print('X train shape', X_train.shape)
-print('y train shape', y_train.shape)
-print('X test shape', X_test.shape)
-print('y test shape', y_test.shape)
 
 with tf.Session() as sess:
-    # Running Initializer
+    # Run Initializer
     sess.run(init)
     cost_hist, acc_hist = [], []
     for epoch in range(1, epochs + 1):
         _x, _y = next_batch(batch_size, X_train, y_train)
-        # Running Optimizer
+        # Run Optimizer
         sess.run(train_op, feed_dict = { X : _x, Y : _y, keep_prob : dropout })
+        # Calculate and display Loss and Accuracy for each Display Epoch
         if epoch % display_step == 0:
             # Calculating Loss and Accuracy on the current Epoch
             loss, acc = sess.run([loss_op, accuracy], feed_dict = { X : _x, Y : _y, keep_prob : 1.0 })
@@ -166,8 +184,9 @@ with tf.Session() as sess:
             cost_hist.append(loss)
             acc_hist.append(acc)
             print('Epoch ' + str(epoch) + ', Cost: ' + str(loss) + ', Accuracy: ' + str(acc * 100) + ' %')
+    
+    # Print Loss and Accuracy for Training and Verification datasets
     print('-' * 50)
-    print('\nOptimization Finished\n')
     print('Accuracy on Training Data: ' + str(sess.run(accuracy,
                                                        feed_dict = {
                                                            X : X_train,
@@ -179,16 +198,18 @@ with tf.Session() as sess:
                                                        X : X_test,
                                                        Y : y_test,
                                                        keep_prob : 1.0
-                                                   }) * 100) + ' %')
+                                                   }) * 100) + ' %\n\n')               
 
+# Display plots of Loss and Accuracy over each Epoch
 plt.plot(list(range(len(cost_hist))), cost_hist)
-plt.title("Change in cost")
+plt.title("Cost per Epoch")
 plt.show()
 
 plt.plot(list(range(len(acc_hist))), acc_hist)
-plt.title("Change in accuracy")
+plt.title("Accuracy per Epoch")
 plt.show()
 
+# Now run training on the whole dataset
 print('Training on the whole dataset....\n')
 with tf.Session() as sess:
     sess.run(init) # Running Initializer
@@ -215,8 +236,7 @@ with tf.Session() as sess:
             acc_hist.append(acc)
             print('Epoch ' + str(epoch) + ', Cost: ' + str(loss) + ', Accuracy: ' + str(acc * 100) + ' %')
     print('-' * 50)
-    print('\nOptimization Finished\n')
-    print('Accuracy after training on whole dataset Data: ' + str(sess.run(accuracy,
+    print('Accuracy after training on whole dataset: ' + str(sess.run(accuracy,
                                                        feed_dict = {
                                                            X : x,
                                                            Y : y_encoded,
@@ -234,10 +254,9 @@ plt.title("Change in accuracy")
 plt.show()
 
 
-#PREDICTING MODEL ON TEST DATA
+#--------------------------Run Trained Model Against Test Dataset---------------------------
 
 data_test = pd.read_csv('./input/sign_mnist_test.csv')
-print('Dataframe Shape:', data_test.shape)
 
 data_test.head()
 
