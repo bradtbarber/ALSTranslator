@@ -88,7 +88,7 @@ weights = {
     'w4' : tf.Variable(tf.random_normal([262144, 1024])),
     # Weight for Fully Connected Layer 2: 49 * 124 input channels, 1024 output channels
     'w5' : tf.Variable(tf.random_normal([1024, 512])),
-    # Weight for Output Layer: 1024 input channels, 25(number of classes) output channels
+    # Weight for Output Layer: 512 input channels, 25(number of classes) output channels
     'w6' : tf.Variable(tf.random_normal([512, n_classes]))
 }
 
@@ -134,19 +134,19 @@ def neural_network(x, weight, bias, dropout, k, stride):
     
     # Fully Connected Layer 1
     # Reshaping output of previous convolutional layer to fit the fully connected layer
-    fc = tf.reshape(conv3, [-1, weights['w4'].get_shape().as_list()[0]])
+    fc1 = tf.reshape(conv3, [-1, weights['w4'].get_shape().as_list()[0]])
    
     # Add fully connected layer
-    fc = tf.add(tf.matmul(fc, weight['w4']), bias['b4'])
-    fc = tf.nn.relu(fc) # Relu activation function
-    fc = tf.nn.dropout(fc, dropout) # Applying dropout on Fully Connected Layer
+    fc1 = tf.add(tf.matmul(fc1, weight['w4']), bias['b4'])
+    fc1 = tf.nn.relu(fc1) # Relu activation function
+    fc1 = tf.nn.dropout(fc1, dropout) # Applying dropout on Fully Connected Layer
 
     # Add fully connected layer
-    fc = tf.add(tf.matmul(fc, weight['w5']), bias['b5'])
-    fc = tf.nn.relu6(fc) # Relu6 activation function
-    fc = tf.nn.dropout(fc, dropout) # Applying dropout on Fully Connected Layer
+    fc2 = tf.add(tf.matmul(fc1, weight['w5']), bias['b5'])
+    fc2 = tf.nn.relu(fc2) # Relu activation function
+    fc2 = tf.nn.dropout(fc2, dropout) # Applying dropout on Fully Connected Layer
     
-    out = tf.add(tf.matmul(fc, weight['w6']), bias['b6']) # Output Layer
+    out = tf.add(tf.matmul(fc2, weight['w6']), bias['b6']) # Output Layer
     return out
 
 #TRAINING NEURAL NETWORK
@@ -187,8 +187,8 @@ for k in k_vals:
             for epoch in range(1, epochs + 1):
                 _x, _y = next_batch(batch_size, X_train, y_train)
 
-                print('X train shape', _x.shape)
-                print('y train shape', _y.shape)
+                #print('X train shape', _x.shape)
+                #print('y train shape', _y.shape)
 
                 # Running Optimizer
                 sess.run(train_op, feed_dict = { X : _x, Y : _y, keep_prob : dropout })
