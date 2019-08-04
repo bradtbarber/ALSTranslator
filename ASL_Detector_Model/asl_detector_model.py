@@ -126,10 +126,11 @@ def read_and_translate_image_capture_output(image_file):
     result = ''
 
     #iterate over all rows (images) in the csv file and try to detect the ASL sign present
+    prob_results = []
     for i in range(row_count):
         #get prediction for image
         x = data.iloc[i].values
-        image, pred, prob_dict = get_prediction(x.reshape(1, 784))
+        image, pred, prob_result = get_prediction(x.reshape(1, 784))
         
         #print translation probability array
         print('Image ' + str(i) + ' Probability Array')
@@ -141,8 +142,9 @@ def read_and_translate_image_capture_output(image_file):
         plt.title(pred)
         plt.show()
         result = result + pred
+        prob_results[i] = prob_result
     
-    return result
+    return result, prob_results
 
 def translate_asl_images(image_file):
     #Run test to make sure model is producing accurate predictions
@@ -157,6 +159,6 @@ def translate_asl_images(image_file):
         print('test failed. Results may be incorrect...\n')
 
     #Read in data from Camera Capture output directory and attempt to translate
-    result = read_and_translate_image_capture_output(image_file)
+    result, prob_results = read_and_translate_image_capture_output(image_file)
     print('Translated ASL: ' + result + '\n')
-    return result
+    return result, prob_results
