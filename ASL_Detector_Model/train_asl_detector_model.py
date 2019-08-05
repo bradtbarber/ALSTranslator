@@ -127,7 +127,7 @@ def neural_network(x, weight, bias, dropout):
     x = tf.reshape(x, shape = [-1, 28, 28, 1])
 
     # # Apply random distortions to image to improve generalization of model
-    x = distort_image(x)
+    #x = distort_image(x)
     
     # Convolutional Layer 1
     conv1 = conv2d(x, weight['w1'], bias['b1'])

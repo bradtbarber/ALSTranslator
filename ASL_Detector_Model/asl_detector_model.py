@@ -57,13 +57,16 @@ def maxpool2d(x, k=2):
     return tf.nn.max_pool(x, ksize = [1, k, k, 1], strides = [1, k, k, 1], padding = 'SAME')
 
 def neural_network(x, weight, bias, dropout):
+    # Reshape input array to 2D image matrix
     x = tf.reshape(x, shape = [-1, 28, 28, 1])
     
-    conv1 = conv2d(x, weight['w1'], bias['b1']) # Convolutional Layer 1
-    pool1 = maxpool2d(conv1) # Pooling Layer 1
+    # Convolutional Layer 1
+    conv1 = conv2d(x, weight['w1'], bias['b1'])
+    pool1 = maxpool2d(conv1)
     
-    conv2 = conv2d(pool1, weight['w2'], bias['b2']) # Convolutional Layer 2
-    pool2 = maxpool2d(conv2) # Pooling Layer 1
+    # Convolutional Layer 2
+    conv2 = conv2d(pool1, weight['w2'], bias['b2'])
+    pool2 = maxpool2d(conv2)
     
     # Reshaping output of previous convolutional layer to fit the fully connected layer
     fc = tf.reshape(pool2, [-1, weights['w3'].get_shape().as_list()[0]])
@@ -71,11 +74,11 @@ def neural_network(x, weight, bias, dropout):
     # Fully Connected Layer 1
     fc = tf.add(tf.matmul(fc, weight['w3']), bias['b3'])
     fc = tf.nn.relu(fc)
-    
-    # Applying dropout on Fully Connected Layer
+    # Dropout on Fully Connected Layer 1
     fc = tf.nn.dropout(fc, dropout)
     
-    out = tf.add(tf.matmul(fc, weight['w4']), bias['b4']) # Output Layer
+    # Output Layer
+    out = tf.add(tf.matmul(fc, weight['w4']), bias['b4'])
     return out
 
 X = tf.placeholder(tf.float32, shape = [None, n_input]) # Placeholder for Feature Matrix
