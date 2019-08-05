@@ -66,12 +66,17 @@ else:
     outcome_probabilities = caclulate_outcome_probabilities(top_predictions)
     outcome_probabilities.sort(key = sortFirst, reverse = True)
 
+    found = False
     for prob, word in outcome_probabilities:
         print('prob: ' + str(prob) + ', word: ' + word)
         check_word_result = word_search.check_word(word)
         if check_word_result == -1: # Terminate if error occurred
-            print('ERROR - Exception thrown. Unable to perform translation.')
+            print('\nERROR - Exception thrown. Unable to perform translation.')
             break
         elif  check_word_result == 0: # Return best guess if valid
             print('\nTranslation: ' + word)
+            found = True
             break
+
+    if  not found:
+        print('\nCould not translate input signs.')
