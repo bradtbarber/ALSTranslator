@@ -60,18 +60,20 @@ def neural_network(x, weight, bias, dropout):
     x = tf.reshape(x, shape = [-1, 28, 28, 1])
     
     conv1 = conv2d(x, weight['w1'], bias['b1']) # Convolutional Layer 1
-    conv1 = maxpool2d(conv1) # Pooling Layer 1
+    pool1 = maxpool2d(conv1) # Pooling Layer 1
     
-    conv2 = conv2d(conv1, weight['w2'], bias['b2']) # Convolutional Layer 2
-    conv2 = maxpool2d(conv2) # Pooling Layer 1
+    conv2 = conv2d(pool1, weight['w2'], bias['b2']) # Convolutional Layer 2
+    pool2 = maxpool2d(conv2) # Pooling Layer 1
     
-    # Fully Connected Layer 1
     # Reshaping output of previous convolutional layer to fit the fully connected layer
-    fc = tf.reshape(conv2, [-1, weights['w3'].get_shape().as_list()[0]])
-    fc = tf.add(tf.matmul(fc, weight['w3']), bias['b3']) # Linear Function
-    fc = tf.nn.relu(fc) # Activation Function
+    fc = tf.reshape(pool2, [-1, weights['w3'].get_shape().as_list()[0]])
+
+    # Fully Connected Layer 1
+    fc = tf.add(tf.matmul(fc, weight['w3']), bias['b3'])
+    fc = tf.nn.relu(fc)
     
-    fc = tf.nn.dropout(fc, dropout) # Applying dropout on Fully Connected Layer
+    # Applying dropout on Fully Connected Layer
+    fc = tf.nn.dropout(fc, dropout)
     
     out = tf.add(tf.matmul(fc, weight['w4']), bias['b4']) # Output Layer
     return out
@@ -91,11 +93,10 @@ def get_prediction(img):
         pred = sess.run(y_pred, feed_dict = { X : img, keep_prob : dropout })
     img = img.reshape(28, 28)
     pred = list(pred.flatten())
-    for p in pred:
-        prob_dict[chr(pred.index(p) + 65)] = (p - min(pred)) / (max(pred) - min(pred)) 
     maxPred = chr(pred.index(max(pred)) + 65)
-    return (img, maxPred, prob_dict)
+    return (img, maxPred, pred)
 
+# Run  prediction tests on the first
 def run_test(limit):
     data_test = pd.read_csv(os.path.abspath('ASL_Detector_Model\\input\\sign_mnist_test.csv'))
     result = ''
@@ -108,40 +109,45 @@ def run_test(limit):
     x_test.shape, y_test.shape
     i = 0
     for x in x_test:
-        image, pred, prob_dict = get_prediction(x.reshape(1, 784))
+        image, max_pred, predictions = get_prediction(x.reshape(1, 784))
         i = i + 1
-        result = result + pred
+        result = result + max_pred
+
         if i == limit and limit != 0:
             break
     return result
-    
+
+# Runs CNN model on provided images
+# Returns the best guess based on the model's calculated certainty as first return
+# Returns the full certainty arrays for each image as calculed by the model as second return   
 def read_and_translate_image_capture_output(image_file):
-    #read in csv file and get number of images
+    # Read in CSV file and get number of images
     data = pd.read_csv(image_file)
     row_count = len(data.index)
-    result = ''
-
-    #iterate over all rows (images) in the csv file and try to detect the ASL sign present
-    for i in range(row_count):
-        #get prediction for image
-        x = data.iloc[i].values
-        image, pred, prob_dict = get_prediction(x.reshape(1, 784))
-        
-        #print translation probability array
-        print('Image ' + str(i) + ' Probability Array')
-        for char, prob in prob_dict.items():
-            print(char + ': ' + str(prob))
-        print('\n')
-        
-        plt.imshow(image, cmap = 'gray')
-        plt.title(pred)
-        plt.show()
-        result = result + pred
     
-    return result
+    # Initialize variables to hold return values
+    best_guess = ''
+    predictions = []
+
+    # Iterate over all rows (images) in the csv file and try to detect the ASL sign present
+    for i in range(row_count):
+        # Get Prediction for Image
+        x = data.iloc[i].values
+        image, max_pred, pred = get_prediction(x.reshape(1, 784))
+        
+        # Display image with max confidence guess
+        plt.imshow(image, cmap = 'gray')
+        plt.title(max_pred)
+        plt.show()
+
+        # Append results to return values
+        best_guess = best_guess + max_pred
+        predictions.append(pred)
+    
+    return best_guess, predictions
 
 def translate_asl_images(image_file):
-    #Run test to make sure model is producing accurate predictions
+    # Run test to make sure model is producing accurate predictions
     print('performing test run on first 5 test images...')
     expected_result = 'GFKAD'
     test_result = run_test(5)
@@ -152,7 +158,8 @@ def translate_asl_images(image_file):
     else:
         print('test failed. Results may be incorrect...\n')
 
-    #Read in data from Camera Capture output directory and attempt to translate
-    result = read_and_translate_image_capture_output(image_file)
-    print('Translated ASL: ' + result + '\n')
-    return result
+    # Read in data from Camera Capture output directory and attempt to translate
+    best_guess, predictions = read_and_translate_image_capture_output(image_file)
+    print('Translated ASL: ' + best_guess + '\n')
+
+    return best_guess, predictions
