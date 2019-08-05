@@ -73,5 +73,5 @@ else:
             print('ERROR - Exception thrown. Unable to perform translation.')
             break
         elif  check_word_result == 0: # Return best guess if valid
-            print('Translation: ' + best_guess)
+            print('\nTranslation: ' + word)
             break
