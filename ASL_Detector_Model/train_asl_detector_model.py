@@ -108,7 +108,7 @@ biases = {
 
 # Apply random brightness and contrast distortions to image
 def distort_image(image):
-  contrast_image = tf.image.random_contrast(image, lower=0.6, upper=1.4, seed=43)
+  contrast_image = tf.image.random_contrast(image, lower=0.9, upper=1.1, seed=43)
   brightness_image = tf.image.random_brightness(contrast_image, max_delta=0.1, seed=44)
   return brightness_image
 
@@ -126,7 +126,7 @@ def neural_network(x, weight, bias, dropout):
     # Reshape input array to 2D image matrix
     x = tf.reshape(x, shape = [-1, 28, 28, 1])
 
-    # Apply random distortions to image to improve generalization of model
+    # # Apply random distortions to image to improve generalization of model
     x = distort_image(x)
     
     # Convolutional Layer 1
