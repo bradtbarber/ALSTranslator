@@ -36,17 +36,7 @@ def check_word(word):
 
         except:
             #definition not present
-            if len(data) > 0:
-                print('Definition NOT found, perhaps you meant:')
-                possible_match = data[0]
-                req_resp = get_word(possible_match)
-                data = req_resp.json()
-                deff = parse_definition(data)   
-                print(possible_match + ' - ' + deff)
-                return possible_match
-            else:
-                print('No idea wtf that was')
-                return -1
+            return 1
 
     #else return status code
     elif r.status_code == 204:
